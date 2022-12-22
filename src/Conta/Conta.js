@@ -6,6 +6,7 @@ import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableFooter from "@mui/material/TableFooter";
+import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -15,7 +16,6 @@ import dayjs from "dayjs";
 import * as React from "react";
 import { useParams } from "react-router-dom";
 import api from "../services/axios";
-
 function createData(
   chave,
   dataTransferencia,
@@ -30,7 +30,9 @@ export default function CustomPaginationActionsTable() {
   const [isLoading, setLoading] = React.useState(true);
 
   const [rows, setRows] = React.useState([]);
-
+  const [NomeConta, setNomeConta] = React.useState("");
+  const [SaldoTotal, setSaldoTotal] = React.useState(null);
+  const [SaldoPeriodo, setSaldoPeriodo] = React.useState(null);
   //const numeroConta = this.props.nconta || 1;
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
@@ -38,7 +40,10 @@ export default function CustomPaginationActionsTable() {
   const { numConta } = useParams();
   React.useState(() => {
     api.get(`/conta?IdConta=` + numConta).then((response) => {
-      Transferencias = response.data.content;
+      setNomeConta(response.data.conta.nomeResponsavel);
+      setSaldoTotal(response.data.saldos.saldoTotal);
+      setSaldoPeriodo(response.data.saldos.saldoPeriodo);
+      Transferencias = response.data.transferencias.content;
       for (var c = 0; c < Transferencias.length; c++) {
         const dataTransferencia = new Date(Transferencias[c].dataTransferencia);
         rows[c] = createData(
@@ -53,8 +58,6 @@ export default function CustomPaginationActionsTable() {
       setLoading(false);
     });
   }, []);
-
-  //const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -95,9 +98,9 @@ export default function CustomPaginationActionsTable() {
     rows.length = 0;
 
     api.get(requisicao).then((response) => {
-      Transferencias = response.data.content;
-      console.log(Transferencias);
-      console.log(Transferencias.length);
+      setSaldoTotal(response.data.saldos.saldoTotal);
+      setSaldoPeriodo(response.data.saldos.saldoPeriodo);
+      Transferencias = response.data.transferencias.content;
       for (var c = 0; c < Transferencias.length; c++) {
         const dataTransferencia = new Date(Transferencias[c].dataTransferencia);
         rows[c] = createData(
@@ -162,26 +165,43 @@ export default function CustomPaginationActionsTable() {
       </LocalizationProvider>
 
       <Table sx={{ minWidth: 500 }} aria-label="custom pagination table">
+        <TableHead>
+          <TableRow>
+            <TableCell align="left" colSpan={2}>
+              Saldo total: {SaldoTotal}
+            </TableCell>
+            <TableCell align="left" colSpan={3}>
+              Saldo no periodo: {SaldoPeriodo}
+            </TableCell>
+          </TableRow>
+
+          <TableRow>
+            <TableCell>Dados</TableCell>
+            <TableCell>{NomeConta}</TableCell>
+            <TableCell>Tipo</TableCell>
+            <TableCell>Nome operador transacionado</TableCell>
+          </TableRow>
+        </TableHead>
         <TableBody>
           {rows.map((row) => (
             <TableRow key={row.chave}>
               <TableCell style={{ width: 160 }} scope="row">
                 {row.dataTransferencia}
               </TableCell>
-              <TableCell style={{ width: 160 }} align="right">
+              <TableCell style={{ width: 160 }} align="left">
                 {row.valor}
               </TableCell>
-              <TableCell style={{ width: 160 }} align="right">
+              <TableCell style={{ width: 160 }} align="left">
                 {row.tipo}
               </TableCell>
-              <TableCell style={{ width: 160 }} align="right">
+              <TableCell style={{ width: 160 }} align="left">
                 {row.nomeOperadorTransacao}
               </TableCell>
             </TableRow>
           ))}
           {emptyRows > 0 && (
             <TableRow style={{ height: 53 * emptyRows }}>
-              <TableCell colSpan={6} />
+              <TableCell />
             </TableRow>
           )}
         </TableBody>
